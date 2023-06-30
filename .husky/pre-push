@@ -3,3 +3,9 @@ set -e
 
 echo "Running Dart unit tests..."
 dart test
+
+# Get the current version from pubspec.yaml
+version=$(grep 'version:' pubspec.yaml | awk '{print $2}' | tr -d "'")
+
+# Create a Git tag with the version
+git tag -a $version -m "Version $version"

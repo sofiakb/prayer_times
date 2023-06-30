@@ -1,0 +1,1 @@
+final String invalidTime = '-----'; // The string used for invalid times

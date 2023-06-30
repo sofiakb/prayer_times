@@ -1,0 +1,1 @@
+enum MaghribSelector { angle, minutesAfterSunset }

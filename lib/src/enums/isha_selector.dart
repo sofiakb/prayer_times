@@ -1,0 +1,1 @@
+enum IshaSelector { angle, minutesAfterMaghrib }

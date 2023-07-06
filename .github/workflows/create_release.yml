@@ -89,8 +89,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Build
-        run: echo ${{ github.sha }} > Release.txt
+      - name: Get Git SHA
+        run: echo "gitSha=${{ github.sha }}" >> $GITHUB_OUTPUT
+        id: get_git_sha
+      - name: Edit pubspec.yaml version
+        run: |
+          sed -i s/"version: $(grep 'version:' pubspec.yaml | awk '{print $2}' | tr -d "'")"/"version: ${{ steps.get_git_sha.outputs.gitSha }}"/g pubspec.yaml
+      - name: Commit and push changes
+        run: |
+          git add -A
+          git commit -m "Release ${{ needs.generate.outputs.gitTag }}"
+          git push
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -101,7 +110,7 @@ jobs:
           release_name: ${{ needs.generate.outputs.gitTag }}
 #          tag_name: ${{ needs.generate.steps.extract_branch.outputs.branch }}
 #          release_name: ${{ needs.generate.steps.extract_branch.outputs.branch }}
-          body: cat Release.txt
+          body: ${{ steps.get_git_sha.outputs.gitSha }}
           draft: false
           prerelease: false
     permissions:

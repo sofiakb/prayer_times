@@ -1,8 +1,0 @@
-{
-	"scripts": {
-		"postinstall": "husky install .husky"
-	},
-	"devDependencies": {
-		"husky": "^8.0.3"
-	}
-}

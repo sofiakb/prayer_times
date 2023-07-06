@@ -1,38 +1,34 @@
-name: "Release"
+name: Main
 
-on: # yamllint disable-line rule:truthy
-  push:
-    tags:
-      - "**"
+on: push
 
 jobs:
-  release:
-    name: "Release"
 
-    runs-on: "ubuntu-latest"
-
+  test:
+    runs-on: ubuntu-latest
     steps:
-      - name: "Determine tag"
-        run: "echo \"RELEASE_TAG=${GITHUB_REF#refs/tags/}\" >> $GITHUB_ENV"
+      - uses: actions/checkout@v3
+        name: Checkout
+      - uses: dart-lang/setup-dart@v1
+        name: Setup Dart
+      - run: dart pub get
+        name: Get pub
+      - run: dart test
+        name: Test
 
-      - name: "Create release"
-        uses: "actions/github-script@v6"
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Build
+        run: echo ${{ github.sha }} > Release.txt
+      - name: Test
+        run: cat Release.txt
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-          script: |
-            try {
-              const response = await github.rest.repos.createRelease({
-                draft: false,
-                generate_release_notes: true,
-                name: process.env.RELEASE_TAG,
-                owner: context.repo.owner,
-                prerelease: false,
-                repo: context.repo.repo,
-                tag_name: process.env.RELEASE_TAG,
-              });
-
-              core.exportVariable('RELEASE_ID', response.data.id);
-              core.exportVariable('RELEASE_UPLOAD_URL', response.data.upload_url);
-            } catch (error) {
-              core.setFailed(error.message);
-            }
+          files: Release.txt

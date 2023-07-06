@@ -1,6 +1,9 @@
 name: Create release
 
-on: push
+on:
+  push:
+    branches:
+      develop
 #  push:
 #    # Sequence of patterns matched against refs/tags
 #    tags:
@@ -32,12 +35,21 @@ jobs:
         id: previoustag
         uses: "WyriHaximus/github-action-get-previous-tag@v1"
         with:
-          fallback: 1.0.0 # Optional fallback tag to use when no tag can be found
+          fallback: 1.0.0
+      - name: 'Get next minor version'
+        id: semvers
+        uses: "WyriHaximus/github-action-next-semvers@v1"
+        with:
+          version: ${{ steps.previoustag.outputs.tag }}
+      - name: Bump Milestone Tag
+        uses: geoadmin/action-milestone-tag@v1.0.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          custom_tag: '${MILESTONE}-dev.${TAG_NUMBER}'
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-
     outputs:
-      gitTag: ${{ steps.previoustag.outputs.tag }}
+      gitTag: ${{ steps.semvers.outputs.patch }}
 
   build:
     needs: [test, generate]
@@ -54,7 +66,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
           tag_name: ${{ needs.generate.outputs.gitTag }}
-          release_name: Release ${{ needs.generate.outputs.gitTag }}
+          release_name: ${{ needs.generate.outputs.gitTag }}
           body: cat Release.txt
           draft: false
           prerelease: false

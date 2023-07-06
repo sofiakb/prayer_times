@@ -39,8 +39,8 @@ jobs:
           fallback: 1.0.0
       - name: Extract branch name
         shell: bash
-        run: echo "${{ github.ref }}" | sed -e s@"refs/heads/release"@@
-#        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads}}" >> $GITHUB_OUTPUT && echo "branch --------------------- $branch"
+        run: echo "${{ github.ref }}" | sed -e s@"refs/heads/release/"@@ >> $GITHUB_OUTPUT
+        #        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads}}" >> $GITHUB_OUTPUT && echo "branch --------------------- $branch"
         id: extract_branch
       - name: Extract branch name
         shell: bash
@@ -97,10 +97,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-#          tag_name: ${{ needs.generate.outputs.gitTag }}
-#          release_name: ${{ needs.generate.outputs.gitTag }}
-          tag_name: ${{ needs.generate.steps.extract_branch.outputs.branch }}
-          release_name: ${{ needs.generate.steps.extract_branch.outputs.branch }}
+          tag_name: ${{ needs.generate.outputs.gitTag }}
+          release_name: ${{ needs.generate.outputs.gitTag }}
+#          tag_name: ${{ needs.generate.steps.extract_branch.outputs.branch }}
+#          release_name: ${{ needs.generate.steps.extract_branch.outputs.branch }}
           body: cat Release.txt
           draft: false
           prerelease: false

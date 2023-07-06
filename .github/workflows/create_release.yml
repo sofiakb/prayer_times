@@ -39,9 +39,14 @@ jobs:
           fallback: 1.0.0
       - name: Extract branch name
         shell: bash
-        run: echo "${{ github.ref }}" | sed -e s@"/refs/heads/release"@@
+        run: echo "${{ github.ref }}" | sed -e s@"refs/heads/release"@@
 #        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads}}" >> $GITHUB_OUTPUT && echo "branch --------------------- $branch"
         id: extract_branch
+      - name: Extract branch name
+        shell: bash
+        run: echo "${{ steps.extract_branch.outputs.branch }}"
+#        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads}}" >> $GITHUB_OUTPUT && echo "branch --------------------- $branch"
+        id: debug_tag
     outputs:
       gitTag: ${{ steps.extract_branch.outputs.branch }}
 #      gitTag: ${{ github.ref }}

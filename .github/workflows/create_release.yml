@@ -92,8 +92,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-          tag_name: ${{ needs.generate.outputs.gitTag }}
-          release_name: ${{ needs.generate.outputs.gitTag }}
+#          tag_name: ${{ needs.generate.outputs.gitTag }}
+#          release_name: ${{ needs.generate.outputs.gitTag }}
+          tag_name: ${{ needs.generate.steps.extract_branch.outputs.branch }}
+          release_name: ${{ needs.generate.steps.extract_branch.outputs.branch }}
           body: cat Release.txt
           draft: false
           prerelease: false

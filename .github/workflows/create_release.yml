@@ -78,7 +78,7 @@ jobs:
           merge-method: merge
 
   build:
-    needs: main
+    needs: [main, generate]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

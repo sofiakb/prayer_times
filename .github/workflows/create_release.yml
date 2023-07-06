@@ -97,6 +97,9 @@ jobs:
           sed -i s/"version: $(grep 'version:' pubspec.yaml | awk '{print $2}' | tr -d "'")"/"version: ${{ steps.get_git_sha.outputs.gitSha }}"/g pubspec.yaml
       - name: Commit and push changes
         run: |
+          git config --global user.email "contact.sofiakb+gh_action@gmail.com"
+          git config --global user.name "[Automated] Sofiakb"
+          
           git add -A
           git commit -m "Release ${{ needs.generate.outputs.gitTag }}"
           git push

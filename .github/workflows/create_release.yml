@@ -54,19 +54,19 @@ jobs:
       - name: git checkout
         uses: actions/checkout@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       # https://github.com/marketplace/actions/github-pull-request-action
       - name: create pull request
         id: open-pr
         uses: repo-sync/pull-request@v2
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           destination_branch: ${{ github.event.repository.default_branch }}
           pr_title: "[Automated] Merge ${{ github.ref_name }} into ${{ github.event.repository.default_branch }}"
           pr_body: "Automated Pull Request"
-          pr_reviewer: "sofiakb"
-          pr_assignee: "sofiakb"
+#          pr_reviewer: "sofiakb"
+#          pr_assignee: "sofiakb"
 
       # https://github.com/marketplace/actions/enable-pull-request-automerge
       - name: enable automerge

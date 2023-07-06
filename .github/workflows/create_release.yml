@@ -62,6 +62,18 @@ jobs:
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
+      - name: Edit pubspec.yaml version
+        run: |
+          sed -i s/"version: $(grep 'version:' pubspec.yaml | awk '{print $2}' | tr -d "'")"/"version: ${{ needs.generate.outputs.gitTag }}"/g pubspec.yaml
+      - name: Commit and push changes
+        run: |
+          git config --global user.email "contact.sofiakb+gh_action@gmail.com"
+          git config --global user.name "[Automated] Sofiakb"
+
+          git add -A
+          git commit -m "Release ${{ needs.generate.outputs.gitTag }}"
+          git push
+
       # https://github.com/marketplace/actions/github-pull-request-action
       - name: create pull request
         id: open-pr
@@ -92,17 +104,6 @@ jobs:
       - name: Get Git SHA
         run: echo "gitSha=${{ github.sha }}" >> $GITHUB_OUTPUT
         id: get_git_sha
-      - name: Edit pubspec.yaml version
-        run: |
-          sed -i s/"version: $(grep 'version:' pubspec.yaml | awk '{print $2}' | tr -d "'")"/"version: ${{ steps.get_git_sha.outputs.gitSha }}"/g pubspec.yaml
-      - name: Commit and push changes
-        run: |
-          git config --global user.email "contact.sofiakb+gh_action@gmail.com"
-          git config --global user.name "[Automated] Sofiakb"
-          
-          git add -A
-          git commit -m "Release ${{ needs.generate.outputs.gitTag }}"
-          git push
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1

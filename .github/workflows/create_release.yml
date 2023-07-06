@@ -66,8 +66,8 @@ jobs:
           destination_branch: ${{ github.event.repository.default_branch }}
           pr_title: "[Automated] Merge ${{ github.ref_name }} into ${{ github.event.repository.default_branch }}"
           pr_body: "Automated Pull Request"
-#          pr_reviewer: "sofiakb"
-#          pr_assignee: "sofiakb"
+          pr_reviewer: "sofiakb"
+          pr_assignee: "sofiakb"
 
       # https://github.com/marketplace/actions/enable-pull-request-automerge
       - name: enable automerge
@@ -94,7 +94,7 @@ jobs:
         with:
           tag_name: ${{ needs.generate.outputs.gitTag }}
           release_name: ${{ needs.generate.outputs.gitTag }}
-          body: $(cat Release.txt)
+          body: cat Release.txt
           draft: false
           prerelease: false
     permissions:

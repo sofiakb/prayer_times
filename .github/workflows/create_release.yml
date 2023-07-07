@@ -14,22 +14,25 @@ on:
 jobs:
 
   test:
+    name: Testing dart package
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        name: Checkout
+        name: Checkout actions
       - uses: dart-lang/setup-dart@v1
         name: Setup Dart
       - run: dart pub get
         name: Get pub
       - run: dart test
-        name: Test
+        name: Running test...
 
   generate:
     needs: test
+    name: Generate tags
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        name: Checkout actions
         with:
           fetch-depth: 0 # Required due to the way Git works, without it this action won't be able to find any or the correct tags
       - name: 'Get Previous tag'
@@ -40,21 +43,13 @@ jobs:
       - name: Extract branch name
         shell: bash
         run: echo branch=$(echo "${{ github.ref }}" | sed -e s@"refs/heads/release/"@@ | sed '/^v/ s/.//') >> $GITHUB_OUTPUT
-        #        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads}}" >> $GITHUB_OUTPUT && echo "branch --------------------- $branch"
         id: extract_branch
-      - name: Extract branch name
-        shell: bash
-        run: echo "${{ steps.extract_branch.outputs.branch }}"
-#        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads}}" >> $GITHUB_OUTPUT && echo "branch --------------------- $branch"
-        id: debug_tag
     outputs:
       gitTag: ${{ steps.extract_branch.outputs.branch }}
-#      gitTag: ${{ github.ref }}
-#      gitTag: ${{ steps.previoustag.outputs.patch }}
 
   main:
     needs: generate
-    name: Create PR Release to Main
+    name: Create PR Release to Main / Develop
     runs-on: ubuntu-latest
     steps:
       - name: git checkout
@@ -78,7 +73,7 @@ jobs:
           git stash) || true 
 
       # https://github.com/marketplace/actions/github-pull-request-action
-      - name: create pull request
+      - name: Create PR release -> main
         id: open-pr
         uses: repo-sync/pull-request@v2
         with:
@@ -89,8 +84,19 @@ jobs:
           pr_reviewer: "sofiakb"
           pr_assignee: "sofiakb"
 
+      - name: Create PR release -> develop
+        id: open-pr-develop
+        uses: repo-sync/pull-request@v2
+        with:
+          github_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          destination_branch: develop
+          pr_title: "[Automated] Merge ${{ github.ref_name }} into ${{ github.event.repository.default_branch }}"
+          pr_body: "Automated Pull Request"
+          pr_reviewer: "sofiakb"
+          pr_assignee: "sofiakb"
+
       # https://github.com/marketplace/actions/enable-pull-request-automerge
-      - name: enable automerge
+      - name: Enable main automerge
         if: steps.open-pr.outputs.pr_number != ''
         uses: peter-evans/enable-pull-request-automerge@v2
         with:
@@ -98,8 +104,17 @@ jobs:
           pull-request-number: ${{ steps.open-pr.outputs.pr_number }}
           merge-method: merge
 
+      - name: Enable develop automerge
+        if: steps.open-pr-develop.outputs.pr_number != ''
+        uses: peter-evans/enable-pull-request-automerge@v2
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          pull-request-number: ${{ steps.open-pr-develop.outputs.pr_number }}
+          merge-method: merge
+
   build:
-    needs: [main, generate]
+    needs: [ main, generate ]
+    name: Create Release from ${{ needs.generate.outputs.gitTag }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -111,12 +126,10 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ needs.generate.outputs.gitTag }}
           release_name: ${{ needs.generate.outputs.gitTag }}
-#          tag_name: ${{ needs.generate.steps.extract_branch.outputs.branch }}
-#          release_name: ${{ needs.generate.steps.extract_branch.outputs.branch }}
           body: ${{ steps.get_git_sha.outputs.gitSha }}
           draft: false
           prerelease: false

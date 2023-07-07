@@ -17,4 +17,4 @@ dev_dependencies:
 
 
 scripts:
-  release: git checkout -B release/$1 && git push origin release/$1 && git checkout - && git branch -D release/$1
+  release: ./scripts/release.sh

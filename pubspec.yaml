@@ -14,3 +14,7 @@ dev_dependencies:
   lints: ^2.0.0
   test: ^1.21.0
   husky: ^0.1.6
+
+
+scripts:
+  release: git checkout -B release/$1 && git push origin release/$1 && git checkout - && git branch -D release/$1

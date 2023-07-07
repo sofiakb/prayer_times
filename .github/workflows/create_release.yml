@@ -117,13 +117,11 @@ jobs:
           merge-method: merge
 
       - name: Autoapprove PR release -> main
-        if: steps.cpr.outputs.pull-request-operation == 'created'
         run: gh pr review --approve "${{ steps.open-pr.outputs.pr_number }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Autoapprove PR release -> develop
-        if: steps.cpr.outputs.pull-request-operation == 'created'
         run: gh pr review --approve "${{ steps.open-pr-develop.outputs.pr_number }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

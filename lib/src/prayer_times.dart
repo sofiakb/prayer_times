@@ -87,8 +87,8 @@ class PrayerTimes {
     }
   }
 
-  nextPrayer({DateTime? date}) {
-    date ??= DateTime.now();
+  nextPrayer() {
+    DateTime date = params.date;
     if (date.isAfter(isha)) {
       return Prayer.fajrAfter;
     } else if (date.isAfter(maghrib)) {

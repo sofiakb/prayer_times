@@ -11,6 +11,10 @@ on:
     branches:
       - 'release/*'
 
+permissions:
+  pull-requests: write
+  contents: write
+
 jobs:
 
   test:
@@ -111,6 +115,18 @@ jobs:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           pull-request-number: ${{ steps.open-pr-develop.outputs.pr_number }}
           merge-method: merge
+
+      - name: Autoapprove PR release -> main
+        if: steps.cpr.outputs.pull-request-operation == 'created'
+        run: gh pr review --approve "${{ steps.open-pr.outputs.pr_number }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Autoapprove PR release -> develop
+        if: steps.cpr.outputs.pull-request-operation == 'created'
+        run: gh pr review --approve "${{ steps.open-pr-develop.outputs.pr_number }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build:
     needs: [ main, generate ]

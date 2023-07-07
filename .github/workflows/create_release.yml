@@ -1,6 +1,15 @@
-name: Main
+name: Create release
 
-on: push
+#on: push
+#  push:
+#    # Sequence of patterns matched against refs/tags
+#    tags:
+#      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+on:
+  push:
+    branches:
+      - 'release/*'
 
 jobs:
 
@@ -16,19 +25,100 @@ jobs:
       - run: dart test
         name: Test
 
+  generate:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Required due to the way Git works, without it this action won't be able to find any or the correct tags
+      - name: 'Get Previous tag'
+        id: previoustag
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+        with:
+          fallback: 1.0.0
+      - name: Extract branch name
+        shell: bash
+        run: echo branch=$(echo "${{ github.ref }}" | sed -e s@"refs/heads/release/"@@ | sed '/^v/ s/.//') >> $GITHUB_OUTPUT
+        #        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads}}" >> $GITHUB_OUTPUT && echo "branch --------------------- $branch"
+        id: extract_branch
+      - name: Extract branch name
+        shell: bash
+        run: echo "${{ steps.extract_branch.outputs.branch }}"
+#        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads}}" >> $GITHUB_OUTPUT && echo "branch --------------------- $branch"
+        id: debug_tag
+    outputs:
+      gitTag: ${{ steps.extract_branch.outputs.branch }}
+#      gitTag: ${{ github.ref }}
+#      gitTag: ${{ steps.previoustag.outputs.patch }}
+
+  main:
+    needs: generate
+    name: Create PR Release to Main
+    runs-on: ubuntu-latest
+    steps:
+      - name: git checkout
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: Edit pubspec.yaml version
+        run: |
+          sed -i s/"version: $(grep 'version:' pubspec.yaml | awk '{print $2}' | tr -d "'")"/"version: ${{ needs.generate.outputs.gitTag }}"/g pubspec.yaml
+      - name: Commit and push changes
+        run: |
+          (git config --global user.email "contact.sofiakb+gh_action@gmail.com"
+          git config --global user.name "[Automated] Sofiakb"
+
+          git checkout -B ${{ needs.generate.outputs.gitTag }}
+          git add -A
+          git commit -m "Release ${{ needs.generate.outputs.gitTag }}"
+          git push origin ${{ needs.generate.outputs.gitTag }}
+          git checkout -
+          git stash) || true 
+
+      # https://github.com/marketplace/actions/github-pull-request-action
+      - name: create pull request
+        id: open-pr
+        uses: repo-sync/pull-request@v2
+        with:
+          github_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          destination_branch: ${{ github.event.repository.default_branch }}
+          pr_title: "[Automated] Merge ${{ github.ref_name }} into ${{ github.event.repository.default_branch }}"
+          pr_body: "Automated Pull Request"
+          pr_reviewer: "sofiakb"
+          pr_assignee: "sofiakb"
+
+      # https://github.com/marketplace/actions/enable-pull-request-automerge
+      - name: enable automerge
+        if: steps.open-pr.outputs.pr_number != ''
+        uses: peter-evans/enable-pull-request-automerge@v2
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          pull-request-number: ${{ steps.open-pr.outputs.pr_number }}
+          merge-method: merge
 
   build:
-    needs: test
+    needs: [main, generate]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Build
-        run: echo ${{ github.sha }} > Release.txt
-      - name: Test
-        run: cat Release.txt
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Get Git SHA
+        run: echo "gitSha=${{ github.sha }}" >> $GITHUB_OUTPUT
+        id: get_git_sha
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-          files: Release.txt
+          tag_name: ${{ needs.generate.outputs.gitTag }}
+          release_name: ${{ needs.generate.outputs.gitTag }}
+#          tag_name: ${{ needs.generate.steps.extract_branch.outputs.branch }}
+#          release_name: ${{ needs.generate.steps.extract_branch.outputs.branch }}
+          body: ${{ steps.get_git_sha.outputs.gitSha }}
+          draft: false
+          prerelease: false
+    permissions:
+      contents: write
